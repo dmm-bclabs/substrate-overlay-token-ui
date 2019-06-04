@@ -23,6 +23,9 @@ export class App extends ReactiveComponent {
 	constructor() {
 		super([], { ensureRuntime: runtimeUp })
 
+		addCodecTransform('Digest', "u128")
+		addCodecTransform('TokenBalance', 'u128');
+
 		// For debug only.
 		window.runtime = runtime;
 		window.secretStore = secretStore;
@@ -37,6 +40,8 @@ export class App extends ReactiveComponent {
 	readyRender() {
 		return (<div>
 			<Heading />
+			<TokenSegment />
+			<Divider hidden />
 			<WalletSegment />
 			<Divider hidden />
 			<AddressBookSegment />
@@ -87,6 +92,100 @@ class Heading extends React.Component {
 		</div>
 	}
 }
+
+class TokenSegment extends React.Component {
+	constructor() {
+		super()
+		this.source = new Bond;
+		this.init = new Bond;
+		this.mint = new Bond;
+		this.burn = new Bond;
+	}
+	render() {
+		return <Segment style={{ margin: '1em' }}>
+			<Header as='h2'>
+				{/* https://react.semantic-ui.com/elements/icon/ */}
+				<Icon name='money bill alternate' />
+				<Header.Content>
+					Token
+					<Header.Subheader>Manage custom overlay token</Header.Subheader>
+				</Header.Content>
+			</Header>
+			<div style={{ paddingBottom: '1em' }}>
+				<Label>Init <Label.Detail>
+					<Pretty className="value" value={runtime.token.init} />
+				</Label.Detail></Label>
+				<Label>Total Supply <Label.Detail>
+					<Pretty className="value" value={runtime.token.totalSupply} />
+				</Label.Detail></Label>
+				<Label>Local Supply <Label.Detail>
+					<Pretty className="value" value={runtime.token.localSupply} />
+				</Label.Detail></Label>
+			</div>
+			<div style={{ paddingBottom: '1em' }}>
+				<div style={{ fontSize: 'small' }}>account</div>
+				<SignerBond bond={this.source} />
+				<If condition={this.source.ready()} then={<span>
+					<Label>Token Balance
+						<Label.Detail>
+							<Pretty value={runtime.token.balanceOf(this.source)} />
+						</Label.Detail>
+					</Label>
+					<Label>Unit Balance
+						<Label.Detail>
+							<Pretty value={runtime.balances.balance(this.source)} />
+						</Label.Detail>
+					</Label>
+					<Label>Nonce
+						<Label.Detail>
+							<Pretty value={runtime.system.accountNonce(this.source)} />
+						</Label.Detail>
+					</Label>
+				</span>} />
+			</div>
+			<div style={{ paddingBottom: '1em' }}>
+				<div style={{ fontSize: 'small' }}>[WIP] init</div>
+				<InputBond 
+					bond={this.mint} placeholder='init token with amount'
+					action={<TransactButton
+						content='Init'
+						tx={{
+							sender: this.source ? this.source : null,
+							call: null
+						}}
+					/>}
+				/>
+			</div>
+			<div style={{ paddingBottom: '1em' }}>
+				<div style={{ fontSize: 'small' }}>[WIP] mint</div>
+				<InputBond 
+					bond={this.mint} placeholder='Token amount to mint'
+					action={<TransactButton
+						content='Mint'
+						tx={{
+							sender: this.source ? this.source : null,
+							call: null
+						}}
+					/>}
+				/>
+			</div>
+			<div style={{ paddingBottom: '1em' }}>
+				<div style={{ fontSize: 'small' }}>[WIP] burn</div>
+				<InputBond 
+					bond={this.mint} placeholder='Token amount to burn'
+					action={<TransactButton
+						content='Burn'
+						tx={{
+							sender: this.source ? this.source : null,
+							call: null
+						}}
+					/>}
+				/>
+			</div>
+		</Segment>
+	}
+}
+
 
 class WalletSegment extends React.Component {
 	constructor() {
