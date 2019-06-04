@@ -145,7 +145,7 @@ class InputBond extends ReactiveComponent {
 			loading={this.props.loading}
 			size={this.props.size}
 			transparent={this.props.transparent}
-			type='text'
+			type={this.props.type ? this.props.type : 'text'}
 			value={this.state.display != null ? this.state.display : this.state.defaultValue != null ? this.state.defaultValue : ''}
 			error={!this.state.ok}
 			onKeyDown={this.props.onKeyDown}

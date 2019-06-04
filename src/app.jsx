@@ -148,56 +148,74 @@ class TokenSegment extends React.Component {
 				</span>} />
 			</div>
 			<div style={{ paddingBottom: '1em' }}>
-				<div style={{ fontSize: 'small' }}>[WIP] init</div>
+				<div style={{ fontSize: 'small' }}>init</div>
 				<InputBond 
-					bond={this.mint} placeholder='Token amount to init'
+					bond={this.init} placeholder='Token amount to init' type='number'
+					validator={n => n ? n : null}
 					action={<TransactButton
 						content='Init'
 						tx={{
 							sender: this.source ? this.source : null,
-							call: null
+							call: calls.token.init(this.init)
 						}}
 					/>}
 				/>
 			</div>
 			<div style={{ paddingBottom: '1em' }}>
-				<div style={{ fontSize: 'small' }}>[WIP] mint</div>
+				<div style={{ fontSize: 'small' }}>mint</div>
 				<InputBond 
-					bond={this.mint} placeholder='Token amount to mint'
+					bond={this.mint} placeholder='Token amount to mint' type='number'
+					validator={n => n ? n : null}
 					action={<TransactButton
 						content='Mint'
 						tx={{
 							sender: this.source ? this.source : null,
-							call: null
+							call: calls.token.mint(this.mint)
 						}}
 					/>}
 				/>
 			</div>
 			<div style={{ paddingBottom: '1em' }}>
-				<div style={{ fontSize: 'small' }}>[WIP] burn</div>
+				<div style={{ fontSize: 'small' }}>burn</div>
 				<InputBond 
-					bond={this.mint} placeholder='Token amount to burn'
+					bond={this.burn} placeholder='Token amount to burn' type='number'
+					validator={n => n ? n : null}
 					action={<TransactButton
 						content='Burn'
 						tx={{
 							sender: this.source ? this.source : null,
-							call: null
+							call: calls.token.burn(this.burn)
 						}}
 					/>}
 				/>
 			</div>
 			<div style={{ paddingBottom: '1em' }}>
-				<div style={{ fontSize: 'small' }}>[WIP] transfer</div>
-				<AccountIdBond bond={this.destination} />
-				<InputBond bond={this.localTransfer} placeholder='Transfer amount' />
-				<TransactButton
-					content="transfer"
-					tx={{
-						sender: this.source ? this.source : null,
-						call: null
-					}}
-				/>
-
+				<div style={{ fontSize: 'small' }}>transfer</div>
+				<div>
+					<AccountIdBond bond={this.localTarget} />
+					<InputBond
+						bond={this.localTransfer}
+						placeholder='Transfer amount'
+						type="number"
+						validator={n => n ? n : null}
+					/>
+					<TransactButton
+						content="transfer"
+						tx={{
+							sender: this.source ? this.source : null,
+							call: calls.token.transfer(this.localTarget, this.localTransfer),
+						}}
+					/>
+				</div>
+				<div>
+					<If condition={this.localTarget.ready()} then={
+						<Label>Token Balance
+							<Label.Detail>
+								<Pretty value={runtime.token.balanceOf(this.localTarget)} />
+							</Label.Detail>
+						</Label>
+					} />
+				</div>
 			</div>
 		</Segment>
 	}
