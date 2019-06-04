@@ -100,6 +100,10 @@ class TokenSegment extends React.Component {
 		this.init = new Bond;
 		this.mint = new Bond;
 		this.burn = new Bond;
+
+		this.localTarget = new Bond;
+		this.localTransfer = new Bond;
+
 	}
 	render() {
 		return <Segment style={{ margin: '1em' }}>
@@ -146,7 +150,7 @@ class TokenSegment extends React.Component {
 			<div style={{ paddingBottom: '1em' }}>
 				<div style={{ fontSize: 'small' }}>[WIP] init</div>
 				<InputBond 
-					bond={this.mint} placeholder='init token with amount'
+					bond={this.mint} placeholder='Token amount to init'
 					action={<TransactButton
 						content='Init'
 						tx={{
@@ -181,6 +185,19 @@ class TokenSegment extends React.Component {
 						}}
 					/>}
 				/>
+			</div>
+			<div style={{ paddingBottom: '1em' }}>
+				<div style={{ fontSize: 'small' }}>[WIP] transfer</div>
+				<AccountIdBond bond={this.destination} />
+				<InputBond bond={this.localTransfer} placeholder='Transfer amount' />
+				<TransactButton
+					content="transfer"
+					tx={{
+						sender: this.source ? this.source : null,
+						call: null
+					}}
+				/>
+
 			</div>
 		</Segment>
 	}
