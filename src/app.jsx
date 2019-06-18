@@ -5,7 +5,8 @@ import { Bond, TransformBond } from 'oo7';
 import { ReactiveComponent, If, Rspan } from 'oo7-react';
 import {
 	calls, runtime, chain, system, runtimeUp, ss58Decode, ss58Encode, pretty,
-	addressBook, secretStore, metadata, nodeService, bytesToHex, hexToBytes, AccountId
+	addressBook, secretStore, metadata, nodeService, bytesToHex, hexToBytes, AccountId,
+	setNodeUri
 } from 'oo7-substrate';
 import Identicon from 'polkadot-identicon';
 import { AccountIdBond, SignerBond } from './AccountIdBond.jsx';
@@ -25,6 +26,7 @@ export class App extends ReactiveComponent {
 
 		addCodecTransform('Digest', "u128")
 		addCodecTransform('TokenBalance', 'u128');
+		addCodecTransform('ChildChainId', 'u32');
 
 		// For debug only.
 		window.runtime = runtime;
@@ -40,6 +42,8 @@ export class App extends ReactiveComponent {
 	readyRender() {
 		return (<div>
 			<Heading />
+			<NodeSegment />
+			<Divider hidden />
 			<TokenSegment />
 			<Divider hidden />
 			<WalletSegment />
@@ -93,11 +97,43 @@ class Heading extends React.Component {
 	}
 }
 
+class NodeSegment extends React.Component {
+	constructor() {
+		super()
+		this.node = new Bond;
+	}
+	render() {
+		return <Segment style={{ margin: '1em' }}>
+			<Header as='h2'>
+				{/* https://react.semantic-ui.com/elements/icon/ */}
+				<Icon name='wifi' />
+				<Header.Content>
+					Network
+					<Header.Subheader>Manage network connection</Header.Subheader>
+				</Header.Content>
+			</Header>
+			<div style={{ paddingBottom: '1em' }}>
+				<div style={{ fontSize: 'small' }}>node</div>
+				<InputBond
+					bond={this.node}
+					placeholder='Node URI'
+					validator={n => n.length > 0 ? n : null}
+					action={<TransformBondButton
+						content='Set'
+						transform={(node) => { setNodeUri([node]); return true }}
+						args={[this.node]}
+						immediate
+					/>}
+				/>
+			</div>
+		</Segment>
+	}
+}
+
 class TokenSegment extends React.Component {
 	constructor() {
 		super()
 		this.source = new Bond;
-		this.init = new Bond;
 		this.mint = new Bond;
 		this.burn = new Bond;
 
@@ -150,13 +186,11 @@ class TokenSegment extends React.Component {
 			<div style={{ paddingBottom: '1em' }}>
 				<div style={{ fontSize: 'small' }}>init</div>
 				<InputBond 
-					bond={this.init} placeholder='Token amount to init' type='number'
-					validator={n => n ? n : null}
 					action={<TransactButton
 						content='Init'
 						tx={{
 							sender: this.source ? this.source : null,
-							call: calls.token.init(this.init)
+							call: calls.token.init()
 						}}
 					/>}
 				/>
