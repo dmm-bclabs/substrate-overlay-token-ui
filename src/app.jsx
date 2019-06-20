@@ -1,10 +1,10 @@
 import React from 'react';
 require('semantic-ui-css/semantic.min.css');
 import { Icon, Accordion, List, Checkbox, Label, Header, Segment, Divider, Button } from 'semantic-ui-react';
-import { Bond, TransformBond } from 'oo7';
+import { Bond, TransformBond, TimeBond } from 'oo7';
 import { ReactiveComponent, If, Rspan } from 'oo7-react';
 import {
-	calls, runtime, chain, system, runtimeUp, ss58Decode, ss58Encode, pretty,
+	calls, runtime, chain, runtimeUp, ss58Decode, ss58Encode, pretty,
 	addressBook, secretStore, metadata, nodeService, bytesToHex, hexToBytes, AccountId,
 	setNodeUri
 } from 'oo7-substrate';
@@ -19,6 +19,19 @@ import { WalletList, SecretItem } from './WalletList';
 import { AddressBookList } from './AddressBookList';
 import { TransformBondButton } from './TransformBondButton';
 import { Pretty } from './Pretty';
+
+// Override oo7-substrate system
+let system = (() => {
+	let time = new TimeBond
+	let name = new TransformBond(() => nodeService().request('system_name'), [], [time]).subscriptable()
+	let version = new TransformBond(() => nodeService().request('system_version'), [], [time]).subscriptable()
+	let chain = new TransformBond(() => nodeService().request('system_chain'), [], [time]).subscriptable()
+	let properties = new TransformBond(() => nodeService().request('system_properties'), [], [time]).subscriptable()
+	let health = new TransformBond(() => nodeService().request('system_health'), [], [time]).subscriptable()
+	let peers = new TransformBond(() => nodeService().request('system_peers'), [], [time]).subscriptable()
+	let pendingTransactions = new TransformBond(() => nodeService().request('author_pendingExtrinsics'), [], [time]).subscriptable()
+	return { name, version, chain, properties, pendingTransactions, health, peers }
+})()
 
 export class App extends ReactiveComponent {
 	constructor() {
@@ -44,7 +57,11 @@ export class App extends ReactiveComponent {
 			<Heading />
 			<NodeSegment />
 			<Divider hidden />
-			<TokenSegment />
+			<If condition={typeof runtime.token != "undefined"} then={
+				<TokenSegment
+					init={runtime.token ? runtime.token.init: {}}
+					root={runtime.token ? runtime.token.root : {}} />
+			} />
 			<Divider hidden />
 			<WalletSegment />
 			<Divider hidden />
@@ -116,29 +133,43 @@ class NodeSegment extends React.Component {
 				<div style={{ fontSize: 'small' }}>node</div>
 				<InputBond
 					bond={this.node}
-					placeholder='Node URI'
+					defaultValue='ws://127.0.0.1:9944'
 					validator={n => n.length > 0 ? n : null}
 					action={<TransformBondButton
 						content='Set'
-						transform={(node) => { setNodeUri([node]); return true }}
+						transform={(node) => {
+							setNodeUri([node]);
+							return true
+						 }}
 						args={[this.node]}
 						immediate
 					/>}
 				/>
 			</div>
+			<Label>Chain <Label.Detail>
+				<Pretty className="value" value={system.chain} />
+			</Label.Detail></Label>
+			<Label>Height <Label.Detail>
+				<Pretty className="value" value={chain.height} /> (with <Pretty className="value" value={chain.lag} /> lag)
+			</Label.Detail></Label>
 		</Segment>
 	}
 }
 
-class TokenSegment extends React.Component {
+class TokenSegment extends ReactiveComponent {
 	constructor() {
-		super()
+		super(["init", "root"]);
 		this.source = new Bond;
+		this.parent = new Bond;
+
 		this.mint = new Bond;
 		this.burn = new Bond;
 
 		this.localTarget = new Bond;
 		this.localTransfer = new Bond;
+
+		this.childTransfer = new Bond;
+		this.parentTransfer = new Bond;
 
 	}
 	render() {
@@ -155,11 +186,22 @@ class TokenSegment extends React.Component {
 				<Label>Init <Label.Detail>
 					<Pretty className="value" value={runtime.token.init} />
 				</Label.Detail></Label>
+				<Label>Root <Label.Detail>
+					<Pretty className="value" value={runtime.token.root} />
+				</Label.Detail></Label>
 				<Label>Total Supply <Label.Detail>
 					<Pretty className="value" value={runtime.token.totalSupply} />
 				</Label.Detail></Label>
+			<div style={{ paddingBottom: '1em' }}>
+			</div>
 				<Label>Local Supply <Label.Detail>
 					<Pretty className="value" value={runtime.token.localSupply} />
+				</Label.Detail></Label>
+				<Label>Parent Supply <Label.Detail>
+					<Pretty className="value" value={runtime.token.parentSupply} />
+				</Label.Detail></Label>
+				<Label>Child Supply <Label.Detail>
+					<Pretty className="value" value={runtime.token.childSupplies(0)} />
 				</Label.Detail></Label>
 			</div>
 			<div style={{ paddingBottom: '1em' }}>
@@ -183,75 +225,139 @@ class TokenSegment extends React.Component {
 					</Label>
 				</span>} />
 			</div>
-			<div style={{ paddingBottom: '1em' }}>
-				<div style={{ fontSize: 'small' }}>init</div>
-				<InputBond 
-					action={<TransactButton
-						content='Init'
-						tx={{
-							sender: this.source ? this.source : null,
-							call: calls.token.init()
-						}}
-					/>}
-				/>
-			</div>
-			<div style={{ paddingBottom: '1em' }}>
-				<div style={{ fontSize: 'small' }}>mint</div>
-				<InputBond 
-					bond={this.mint} placeholder='Token amount to mint' type='number'
-					validator={n => n ? n : null}
-					action={<TransactButton
-						content='Mint'
-						tx={{
-							sender: this.source ? this.source : null,
-							call: calls.token.mint(this.mint)
-						}}
-					/>}
-				/>
-			</div>
-			<div style={{ paddingBottom: '1em' }}>
-				<div style={{ fontSize: 'small' }}>burn</div>
-				<InputBond 
-					bond={this.burn} placeholder='Token amount to burn' type='number'
-					validator={n => n ? n : null}
-					action={<TransactButton
-						content='Burn'
-						tx={{
-							sender: this.source ? this.source : null,
-							call: calls.token.burn(this.burn)
-						}}
-					/>}
-				/>
-			</div>
-			<div style={{ paddingBottom: '1em' }}>
-				<div style={{ fontSize: 'small' }}>transfer</div>
-				<div>
-					<AccountIdBond bond={this.localTarget} />
-					<InputBond
-						bond={this.localTransfer}
-						placeholder='Transfer amount'
-						type="number"
+			<If condition={!this.state.init} then={
+				<div style={{ paddingBottom: '1em' }}>
+					<div style={{ fontSize: 'small' }}>init</div>
+					<InputBond 
+						action={<TransactButton
+							content='Init'
+							tx={{
+								sender: this.source ? this.source : null,
+								call: calls.token.init()
+							}}
+						/>}
+					/>
+				</div>
+			} />
+			<If condition={this.state.init && this.state.root} then={
+				<div style={{ paddingBottom: '1em' }}>
+					<div style={{ fontSize: 'small' }}>Set Parent</div>
+					<InputBond 
+						bond={this.parent} placeholder='Set parent supply' type='number'
 						validator={n => n ? n : null}
-					/>
-					<TransactButton
-						content="transfer"
-						tx={{
-							sender: this.source ? this.source : null,
-							call: calls.token.transfer(this.localTarget, this.localTransfer),
-						}}
+						action={<TransactButton
+							content='Set'
+							tx={{
+								sender: this.source ? this.source : null,
+								call: calls.token.setParent(this.parent)
+							}}
+						/>}
 					/>
 				</div>
-				<div>
-					<If condition={this.localTarget.ready()} then={
-						<Label>Token Balance
-							<Label.Detail>
-								<Pretty value={runtime.token.balanceOf(this.localTarget)} />
-							</Label.Detail>
-						</Label>
-					} />
+			} />
+			<If condition={this.state.init && this.state.root} then={
+				<div style={{ paddingBottom: '1em' }}>
+					<div style={{ fontSize: 'small' }}>mint</div>
+					<InputBond 
+						bond={this.mint} placeholder='Token amount to mint' type='number'
+						validator={n => n ? n : null}
+						action={<TransactButton
+							content='Mint'
+							tx={{
+								sender: this.source ? this.source : null,
+								call: calls.token.mint(this.mint)
+							}}
+						/>}
+					/>
 				</div>
-			</div>
-		</Segment>
+			} />
+			<If condition={this.state.init && this.state.root} then={
+				<div style={{ paddingBottom: '1em' }}>
+					<div style={{ fontSize: 'small' }}>burn</div>
+					<InputBond 
+						bond={this.burn} placeholder='Token amount to burn' type='number'
+						validator={n => n ? n : null}
+						action={<TransactButton
+							content='Burn'
+							tx={{
+								sender: this.source ? this.source : null,
+								call: calls.token.burn(this.burn)
+							}}
+						/>}
+					/>
+				</div>
+			} />
+			<If condition={this.state.init} then={
+				<div style={{ paddingBottom: '1em' }}>
+					<div style={{ fontSize: 'small' }}>transfer</div>
+					<div>
+						<AccountIdBond bond={this.localTarget} />
+						<InputBond
+							bond={this.localTransfer}
+							placeholder='Transfer amount'
+							type="number"
+							validator={n => n ? n : null}
+						/>
+						<TransactButton
+							content="transfer"
+							tx={{
+								sender: this.source ? this.source : null,
+								call: calls.token.transfer(this.localTarget, this.localTransfer),
+							}}
+						/>
+					</div>
+					<div>
+						<If condition={this.localTarget.ready()} then={
+							<Label>Token Balance
+								<Label.Detail>
+									<Pretty value={runtime.token.balanceOf(this.localTarget)} />
+								</Label.Detail>
+							</Label>
+						} />
+					</div>
+				</div>
+			} />
+			<If condition={this.state.init && this.state.root} then={
+				<div style={{ paddingBottom: '1em' }}>
+					<div style={{ fontSize: 'small' }}>sendToChild</div>
+					<div>
+						<InputBond
+							bond={this.childTransfer}
+							placeholder='Send amount'
+							type="number"
+							validator={n => n ? n : null}
+						/>
+						<TransactButton
+							content="send"
+							tx={{
+								sender: this.source ? this.source : null,
+								call: calls.token.sendToChild(0, this.childTransfer),
+							}}
+						/>
+					</div>
+				</div>
+			} />
+			<If condition={this.state.init && !this.state.root} then={
+				<div style={{ paddingBottom: '1em' }}>
+					<div style={{ fontSize: 'small' }}>sendToParent</div>
+					<div>
+						<InputBond
+							bond={this.parentTransfer}
+							placeholder='Send amount'
+							type="number"
+							validator={n => n ? n : null}
+						/>
+						<TransactButton
+							content="send"
+							tx={{
+								sender: this.source ? this.source : null,
+								call: calls.token.sendToParent(this.parentTransfer),
+							}}
+						/>
+					</div>
+				</div>
+			} />
+			</Segment>
 	}
 }
 
