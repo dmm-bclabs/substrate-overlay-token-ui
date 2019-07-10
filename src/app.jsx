@@ -155,6 +155,13 @@ class NodeSegment extends React.Component {
 			<Label>Chain <Label.Detail>
 				<Pretty className="value" value={system.chain} />
 			</Label.Detail></Label>
+			<If
+				condition={nodeService().status.map(x => !!x.connected)}
+				then={<Label>Connected <Label.Detail>
+					<Pretty className="value" value={nodeService().status.sub('connected')} />
+				</Label.Detail></Label>}
+				else={<Label>Not connected</Label>}
+			/>
 			<Label>Height <Label.Detail>
 				<Pretty className="value" value={chain.height} /> (with <Pretty className="value" value={chain.lag} /> lag)
 			</Label.Detail></Label>
