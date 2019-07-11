@@ -1,4 +1,4 @@
 #!/bin/bash
-/usr/bin/env > .env
+echo NODE=${NODE} > .env
 yarn install
 yarn run dev
