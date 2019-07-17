@@ -33,7 +33,7 @@ let system = (() => {
 	return { name, version, chain, properties, pendingTransactions, health, peers }
 })()
 
-var defaultNode = localStorage.getItem('wsNode') || 'ws://127.0.0.1:9944/';
+var defaultNode = localStorage.getItem('wsNode') || process.env.NODE || 'ws://127.0.0.1:9944/';
 setNodeUri([defaultNode, 'wss://substrate-rpc.parity.io/']);
 
 export class App extends ReactiveComponent {

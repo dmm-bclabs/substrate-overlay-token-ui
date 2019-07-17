@@ -1,7 +1,12 @@
 // webpack v4
 const path = require('path');
+const Dotenv = require('dotenv-webpack');
+
 module.exports = {
   entry: { main: './src/index.js' },
+  plugins: [
+    new Dotenv()
+  ],
   module: {
     rules: [
       {
