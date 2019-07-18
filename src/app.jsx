@@ -33,6 +33,9 @@ let system = (() => {
 	return { name, version, chain, properties, pendingTransactions, health, peers }
 })()
 
+var defaultNode = localStorage.getItem('wsNode') || process.env.NODE || 'ws://127.0.0.1:9944/';
+setNodeUri([defaultNode, 'wss://substrate-rpc.parity.io/']);
+
 export class App extends ReactiveComponent {
 	constructor() {
 		super([], { ensureRuntime: runtimeUp })
@@ -62,7 +65,9 @@ export class App extends ReactiveComponent {
 					init={runtime.token ? runtime.token.init: {}}
 					root={runtime.token ? runtime.token.root : {}} />
 			} />
-			<Divider hidden />
+				<If condition={typeof runtime.token != "undefined"} then={
+				<Divider hidden />
+			} />
 			<WalletSegment />
 			<Divider hidden />
 			<AddressBookSegment />
@@ -133,12 +138,13 @@ class NodeSegment extends React.Component {
 				<div style={{ fontSize: 'small' }}>node</div>
 				<InputBond
 					bond={this.node}
-					defaultValue='ws://127.0.0.1:9944'
+					defaultValue={nodeService().uri[nodeService().uriIndex]}
 					validator={n => n.length > 0 ? n : null}
 					action={<TransformBondButton
 						content='Set'
 						transform={(node) => {
 							setNodeUri([node]);
+							localStorage.setItem('wsNode', node);
 							return true
 						 }}
 						args={[this.node]}
@@ -149,6 +155,13 @@ class NodeSegment extends React.Component {
 			<Label>Chain <Label.Detail>
 				<Pretty className="value" value={system.chain} />
 			</Label.Detail></Label>
+			<If
+				condition={nodeService().status.map(x => !!x.connected)}
+				then={<Label>Connected <Label.Detail>
+					<Pretty className="value" value={nodeService().status.sub('connected')} />
+				</Label.Detail></Label>}
+				else={<Label>Not connected</Label>}
+			/>
 			<Label>Height <Label.Detail>
 				<Pretty className="value" value={chain.height} /> (with <Pretty className="value" value={chain.lag} /> lag)
 			</Label.Detail></Label>
