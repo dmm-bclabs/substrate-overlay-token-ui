@@ -182,7 +182,9 @@ class TokenSegment extends ReactiveComponent {
 		this.localTransfer = new Bond;
 
 		this.childTransfer = new Bond;
+		this.childTarget = new Bond;
 		this.parentTransfer = new Bond;
+		this.parentTarget = new Bond;
 
 	}
 	render() {
@@ -334,6 +336,7 @@ class TokenSegment extends ReactiveComponent {
 				<div style={{ paddingBottom: '1em' }}>
 					<div style={{ fontSize: 'small' }}>sendToChild</div>
 					<div>
+						<AccountIdBond bond={this.childTarget} />
 						<InputBond
 							bond={this.childTransfer}
 							placeholder='Send amount'
@@ -344,7 +347,7 @@ class TokenSegment extends ReactiveComponent {
 							content="send"
 							tx={{
 								sender: this.source ? this.source : null,
-								call: calls.token.sendToChild(0, this.childTransfer),
+								call: calls.token.sendToChild(0, this.childTarget, this.childTransfer),
 							}}
 						/>
 					</div>
@@ -354,6 +357,7 @@ class TokenSegment extends ReactiveComponent {
 				<div style={{ paddingBottom: '1em' }}>
 					<div style={{ fontSize: 'small' }}>sendToParent</div>
 					<div>
+						<AccountIdBond bond={this.parentTarget} />
 						<InputBond
 							bond={this.parentTransfer}
 							placeholder='Send amount'
@@ -364,7 +368,7 @@ class TokenSegment extends ReactiveComponent {
 							content="send"
 							tx={{
 								sender: this.source ? this.source : null,
-								call: calls.token.sendToParent(this.parentTransfer),
+								call: calls.token.sendToParent(this.parentTarget, this.parentTransfer),
 							}}
 						/>
 					</div>
