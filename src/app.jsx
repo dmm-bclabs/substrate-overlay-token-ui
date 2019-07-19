@@ -19,6 +19,7 @@ import { WalletList, SecretItem } from './WalletList';
 import { AddressBookList } from './AddressBookList';
 import { TransformBondButton } from './TransformBondButton';
 import { Pretty } from './Pretty';
+import { StringPretty } from './StringPretty';
 import { stringToU8a } from '@polkadot/util';
 
 // Override oo7-substrate system
@@ -199,10 +200,10 @@ class TokenSegment extends ReactiveComponent {
                     <Pretty className="value" value={runtime.token.init} />
                 </Label.Detail></Label>
                 <Label>Ticker <Label.Detail>
-                    <Pretty className="value" value={runtime.token.ticker} />
+                    <StringPretty className="value" value={runtime.token.ticker} />
                 </Label.Detail></Label>
                 <Label>Token Name <Label.Detail>
-                    <Pretty className="value" value={runtime.token.name} />
+                    <StringPretty className="value" value={runtime.token.name} />
                 </Label.Detail></Label>
                 <Label>Root <Label.Detail>
                     <Pretty className="value" value={runtime.token.root} />
