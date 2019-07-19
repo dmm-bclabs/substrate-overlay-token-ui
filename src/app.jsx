@@ -198,6 +198,12 @@ class TokenSegment extends ReactiveComponent {
                 <Label>Init <Label.Detail>
                     <Pretty className="value" value={runtime.token.init} />
                 </Label.Detail></Label>
+                <Label>Ticker <Label.Detail>
+                    <Pretty className="value" value={runtime.token.ticker} />
+                </Label.Detail></Label>
+                <Label>Token Name <Label.Detail>
+                    <Pretty className="value" value={runtime.token.name} />
+                </Label.Detail></Label>
                 <Label>Root <Label.Detail>
                     <Pretty className="value" value={runtime.token.root} />
                 </Label.Detail></Label>
@@ -245,13 +251,13 @@ class TokenSegment extends ReactiveComponent {
                             bond={this.ticker}
                             placeholder='ticker'
                             type="string"
-                            validator={n => n ? stringToU8a(n) : null}
+                            validator={n => n ? { external: stringToU8a(n), internal: n, ok: true } : null}
                         />
                         <InputBond
                             bond={this.tokenName}
                             placeholder='name'
                             type="string"
-                            validator={n => n ? stringToU8a(n) : null}
+                            validator={n => n ? { external: stringToU8a(n), internal: n, ok: true } : null}
                         />
                         <TransactButton
                             content="Init"
