@@ -35,8 +35,17 @@ let system = (() => {
     return { name, version, chain, properties, pendingTransactions, health, peers }
 })()
 
-var defaultNode = localStorage.getItem('wsNode') || process.env.NODE || 'ws://127.0.0.1:9944/';
+const defaultNode = localStorage.getItem('wsNode') || process.env.NODE || 'ws://127.0.0.1:9944/';
 setNodeUri([defaultNode, 'wss://substrate-rpc.parity.io/']);
+
+const defaultAccounts = [
+    { name: 'Alice', seed: '//Alice' },
+    { name: 'Bob', seed: '//Bob' },
+    { name: 'Charlie', seed: '//Charlie' },
+    { name: 'Dave', seed: '//Dave' },
+    { name: 'Eve', seed: '//Eve' },
+    { name: 'Ferdie', seed: '//Ferdie' }
+];
 
 export class App extends ReactiveComponent {
     constructor() {
@@ -58,6 +67,12 @@ export class App extends ReactiveComponent {
     }
 
     readyRender() {
+        defaultAccounts.map(a => {
+            if ('undefined' == typeof secretStore().find(a.name)) {
+                secretStore().submit(a.seed, a.name);
+            }
+        });
+
         return (<div>
             <Heading />
             <NodeSegment />
